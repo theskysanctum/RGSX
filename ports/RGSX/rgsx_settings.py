@@ -478,22 +478,24 @@ def set_cover_preview(enabled: bool):
     return disp["cover_preview"]
 
 
-DISPLAY_THEME_KEYS = ("blue", "green", "sunset", "midnight", "high_contrast")
-_DISPLAY_THEME_ALIASES = {"default": "blue", "forest": "green"}
+DISPLAY_THEME_KEYS = ("panthera",)
+# Panthera ships exactly one theme - any value saved by a pre-fork install
+# (or an old "default"/"forest" alias) just falls back to it.
+_DISPLAY_THEME_ALIASES = {"default": "panthera", "forest": "panthera"}
 
 
 def normalize_display_theme(theme_key) -> str:
     """Normalise une clé de thème (accepte les anciennes valeurs default/forest)."""
-    value = str(theme_key or "blue").strip().lower()
+    value = str(theme_key or "panthera").strip().lower()
     value = _DISPLAY_THEME_ALIASES.get(value, value)
-    return value if value in DISPLAY_THEME_KEYS else "blue"
+    return value if value in DISPLAY_THEME_KEYS else "panthera"
 
 
 def get_display_background_theme(settings=None):
     """Retourne le thème d'affichage configuré (couleurs de fond, sélection et cadres)."""
     if settings is None:
         settings = load_rgsx_settings()
-    return normalize_display_theme(settings.get("display", {}).get("background_theme", "blue"))
+    return normalize_display_theme(settings.get("display", {}).get("background_theme", "panthera"))
 
 
 def set_display_background_theme(theme_key: str):
