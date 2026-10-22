@@ -3562,7 +3562,7 @@ def draw_controls(screen, menu_state, current_music_name=None, music_popup_start
     
     # Sur la page loading afficher version et musique
     if menu_state == "loading":
-        icon_lines.append(f"RGSX v{config.app_version}")
+        icon_lines.append(f"Game Downloader v{config.app_version}")
     else:
         # Pour les autres menus: affichage avec icônes et contrôles contextuels sur une seule ligne
         all_controls = []

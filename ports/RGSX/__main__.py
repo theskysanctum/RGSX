@@ -247,7 +247,7 @@ def detect_system_info():
 screen = init_display()
 clock = pygame.time.Clock()
 
-pygame.display.set_caption("RGSX")
+pygame.display.set_caption("Game Downloader")
 
 # Initialisation des polices via config
 config.init_font()
