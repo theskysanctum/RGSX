@@ -4512,15 +4512,18 @@ def draw_pause_games_menu(screen, selected_index):
     
     # Filter platforms
     filter_txt = _("submenu_display_filter_platforms") if _ else "Show/Hide Platforms"
-    
+
+    add_system_txt = _("menu_add_system") if _ else "Add a System"
+
     back_txt = _("menu_back") if _ else "Back"
-    options = [update_txt, scan_txt, history_txt, unsupported_txt, filter_txt, back_txt]
+    options = [update_txt, scan_txt, history_txt, unsupported_txt, filter_txt, add_system_txt, back_txt]
     instruction_keys = [
         "instruction_games_update_cache",
         "instruction_games_scan_owned",
         "instruction_games_history",
         "instruction_display_show_unsupported",
         "instruction_display_filter_platforms",
+        "instruction_games_add_system",
         "instruction_generic_back",
     ]
     key = instruction_keys[selected_index] if 0 <= selected_index < len(instruction_keys) else None
@@ -5005,6 +5008,81 @@ def draw_media_manager(screen):
         surface = config.small_font.render(text, True, color)
         screen.blit(surface, surface.get_rect(midtop=(config.screen_width // 2, y)))
         y += config.small_font.get_height() + 4
+
+
+def draw_add_system_menu(screen):
+    """Games > Add a System: every EmulationStation system this build leaves out by default,
+    picked from es_systems_removed.cfg (see add_system.py) - same scrollable-list shape as
+    draw_media_manager above."""
+    from add_system import is_system_active, load_removed_systems
+
+    screen.blit(OVERLAY, (0, 0))
+    entries = load_removed_systems()
+    config.add_system_selection = max(0, min(getattr(config, 'add_system_selection', 0), len(entries) - 1))
+
+    title_surface = config.title_font.render(_("menu_add_system") if _ else "Add a System", True, THEME_COLORS["text"])
+    title_rect = title_surface.get_rect(center=(config.screen_width // 2, title_surface.get_height() // 2 + 14))
+    title_bg = title_rect.inflate(48, 16)
+    pygame.draw.rect(screen, THEME_COLORS["button_idle"], title_bg, border_radius=12)
+    pygame.draw.rect(screen, THEME_COLORS["border"], title_bg, 2, border_radius=12)
+    screen.blit(title_surface, title_rect)
+
+    footer_reserved = max(50, int(config.screen_height * 0.10))
+    list_width = int(config.screen_width * 0.78)
+    list_x = (config.screen_width - list_width) // 2
+    list_y = title_bg.bottom + 16
+    line_height = config.small_font.get_height() + 14
+    list_height = max(line_height * 3 + 20, config.screen_height - footer_reserved - 16 - list_y)
+    pygame.draw.rect(screen, THEME_COLORS["button_idle"], (list_x, list_y, list_width, list_height), border_radius=12)
+    pygame.draw.rect(screen, THEME_COLORS["border"], (list_x, list_y, list_width, list_height), 2, border_radius=12)
+
+    if not entries:
+        empty_surface = config.small_font.render(
+            _("add_system_none_available") if _ else "No systems available to add.",
+            True, THEME_COLORS["text"]
+        )
+        screen.blit(empty_surface, empty_surface.get_rect(center=(list_x + list_width // 2, list_y + list_height // 2)))
+    else:
+        visible_items = max(1, (list_height - 20) // line_height)
+        sel = config.add_system_selection
+        offset = getattr(config, 'add_system_scroll_offset', 0)
+        if sel < offset:
+            offset = sel
+        elif sel >= offset + visible_items:
+            offset = sel - visible_items + 1
+        config.add_system_scroll_offset = offset = max(0, min(offset, max(0, len(entries) - visible_items)))
+
+        for i in range(offset, min(offset + visible_items, len(entries))):
+            entry = entries[i]
+            active = is_system_active(entry["name"])
+            if entry["manufacturer"]:
+                text = f"{entry['fullname']} ({entry['manufacturer']})"
+            else:
+                text = entry["fullname"]
+            if active:
+                text += "  " + (_("add_system_added_suffix") if _ else "[Added]")
+            color = THEME_COLORS.get("text_dim", (130, 130, 130)) if active else THEME_COLORS["text"]
+
+            y_center = list_y + 10 + (i - offset) * line_height + line_height // 2
+            if i == sel:
+                glow_surface = pygame.Surface((list_width - 32, line_height), pygame.SRCALPHA)
+                pygame.draw.rect(glow_surface, THEME_COLORS["fond_lignes"] + (50,), glow_surface.get_rect(), border_radius=8)
+                screen.blit(glow_surface, (list_x + 16, y_center - line_height // 2))
+                if not active:
+                    color = THEME_COLORS["fond_lignes"]
+            list_font, list_text = fit_font(text, 28, list_width - 60)
+            text_surface = list_font.render(list_text, True, color)
+            screen.blit(text_surface, text_surface.get_rect(midleft=(list_x + 20, y_center)))
+
+        if len(entries) > visible_items:
+            track = list_height - 20
+            bar = max(20, int(visible_items / len(entries) * track))
+            bar_y = int(offset / max(1, len(entries) - visible_items) * (track - bar))
+            pygame.draw.rect(screen, THEME_COLORS["fond_lignes"], (list_x + list_width - 22, list_y + 10 + bar_y, 9, bar), border_radius=4)
+
+    hint = _("instruction_games_add_system") if _ else "Confirm: add - requires an EmulationStation restart to appear"
+    hint_surface = config.small_font.render(hint, True, THEME_COLORS["title_text"])
+    screen.blit(hint_surface, hint_surface.get_rect(midtop=(config.screen_width // 2, list_y + list_height + 8)))
 
 
 def draw_filter_platforms_menu(screen):

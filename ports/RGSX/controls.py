@@ -568,6 +568,7 @@ VALID_STATES = [
     "platform_folder_config",   # configuration du dossier personnalisé pour une plateforme
     "folder_browser",           # navigateur de dossiers intégré
     "folder_browser_new_folder", # création d'un nouveau dossier
+    "add_system_menu",          # Games > Add a System
 ]
 
 def validate_menu_state(state):
@@ -591,6 +592,7 @@ def should_open_pause_menu(menu_state: str | None) -> bool:
         "screenscraper_input",
         "media_manager",
         "game_info",
+        "add_system_menu",
     }
 
 
@@ -3307,7 +3309,7 @@ def handle_controls(event, sources, joystick, screen):
         # Sous-menu Games
         elif config.menu_state == "pause_games_menu":
             sel = getattr(config, 'pause_games_selection', 0)
-            total = 6  # update cache, scan roms, history, unsupported, filter, back
+            total = 7  # update cache, scan roms, history, unsupported, filter, add system, back
             if is_input_matched(event, "up"):
                 config.pause_games_selection = (sel - 1) % total
                 config.needs_redraw = True
@@ -3356,12 +3358,58 @@ def handle_controls(event, sources, joystick, screen):
                     config.filter_platforms_source_map = {}
                     config.filter_platforms_expanded_sources = []
                     config.needs_redraw = True
-                elif sel == 5 and is_input_matched(event, "confirm"):  # back
+                elif sel == 5 and is_input_matched(event, "confirm"):  # add a system
+                    config.menu_state = "add_system_menu"
+                    config.add_system_selection = 0
+                    config.add_system_scroll_offset = 0
+                    config.needs_redraw = True
+                elif sel == 6 and is_input_matched(event, "confirm"):  # back
                     config.menu_state = "pause_menu"
                     config.last_state_change_time = pygame.time.get_ticks()
                     config.needs_redraw = True
             elif is_input_matched(event, "cancel") or is_input_matched(event, "start"):
                 config.menu_state = "pause_menu"
+                config.last_state_change_time = pygame.time.get_ticks()
+                config.needs_redraw = True
+
+        # Games > Add a System
+        elif config.menu_state == "add_system_menu":
+            from add_system import add_system, is_system_active, load_removed_systems
+
+            entries = load_removed_systems()
+            sel = min(getattr(config, 'add_system_selection', 0), max(0, len(entries) - 1))
+            if is_input_matched(event, "up"):
+                if entries:
+                    config.add_system_selection = (sel - 1) % len(entries)
+                    config.needs_redraw = True
+            elif is_input_matched(event, "down"):
+                if entries:
+                    config.add_system_selection = (sel + 1) % len(entries)
+                    config.needs_redraw = True
+            elif is_input_matched(event, "page_up"):
+                if entries:
+                    config.add_system_selection = max(0, sel - 10)
+                    config.needs_redraw = True
+            elif is_input_matched(event, "page_down"):
+                if entries:
+                    config.add_system_selection = min(len(entries) - 1, sel + 10)
+                    config.needs_redraw = True
+            elif is_input_matched(event, "confirm"):
+                if entries:
+                    entry = entries[sel]
+                    if is_system_active(entry["name"]):
+                        show_toast(_("add_system_already_active").format(entry["fullname"]) if _ else f"{entry['fullname']} is already active")
+                    else:
+                        result = add_system(entry["name"])
+                        if result == "added":
+                            config.popup_message = _("add_system_added").format(entry["fullname"]) if _ else f"{entry['fullname']} added - restart Game Downloader to see it in EmulationStation"
+                            config.popup_timer = 4000
+                        else:
+                            config.popup_message = _("add_system_add_failed").format(entry["fullname"]) if _ else f"Could not add {entry['fullname']}"
+                            config.popup_timer = 4000
+                    config.needs_redraw = True
+            elif is_input_matched(event, "cancel") or is_input_matched(event, "start"):
+                config.menu_state = "pause_games_menu"
                 config.last_state_change_time = pygame.time.get_ticks()
                 config.needs_redraw = True
 

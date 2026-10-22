@@ -1360,6 +1360,9 @@ async def main():
             elif config.menu_state == "pause_games_menu":
                 from display import draw_pause_games_menu
                 draw_pause_games_menu(screen, getattr(config, 'pause_games_selection', 0))
+            elif config.menu_state == "add_system_menu":
+                from display import draw_add_system_menu
+                draw_add_system_menu(screen)
             elif config.menu_state == "pause_scrap_menu":
                 from display import draw_pause_scrap_menu
                 draw_pause_scrap_menu(screen, getattr(config, 'pause_scrap_selection', 0))

@@ -617,6 +617,11 @@ visible_history_items = 15  # Nombre d'éléments d'historique visibles (ajusté
 confirm_clear_selection = 0  # confirmation clear historique
 confirm_cancel_selection = 0  # confirmation annulation téléchargement
 
+# "Add a System" (Games menu) - re-adds one of the systems the curated build leaves out of
+# es_systems.cfg by default, see add_system.py
+add_system_selection = 0
+add_system_scroll_offset = 0
+
 # Tracking des jeux téléchargés
 downloaded_games = {}  # Dict {platform_name: {game_name: {"timestamp": "...", "size": "..."}}}
 
